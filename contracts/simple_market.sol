@@ -18,10 +18,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity ^0.5.12;
+pragma solidity >=0.5.12 <0.9.0;
 
-import "ds-math/math.sol";
-import "erc20/erc20.sol";
+import "./DSMath.sol";
+import "./erc20.sol";
 
 contract EventfulMarket {
     event LogItemUpdate(uint id);
@@ -182,7 +182,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
             msg.sender,
             uint128(quantity),
             uint128(spend),
-            uint64(now)
+            uint64(block.timestamp)
         );
         emit LogTrade(quantity, address(offer.pay_gem), spend, address(offer.buy_gem));
 
@@ -215,7 +215,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
             offer.buy_gem,
             uint128(offer.pay_amt),
             uint128(offer.buy_amt),
-            uint64(now)
+            uint64(block.timestamp)
         );
 
         success = true;
@@ -249,9 +249,9 @@ contract SimpleMarket is EventfulMarket, DSMath {
         require(uint128(pay_amt) == pay_amt);
         require(uint128(buy_amt) == buy_amt);
         require(pay_amt > 0);
-        require(pay_gem != ERC20(0x0));
+        require(pay_gem != ERC20(address(0)));
         require(buy_amt > 0);
-        require(buy_gem != ERC20(0x0));
+        require(buy_gem != ERC20(address(0)));
         require(pay_gem != buy_gem);
 
         OfferInfo memory info;
@@ -260,7 +260,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
         info.buy_amt = buy_amt;
         info.buy_gem = buy_gem;
         info.owner = msg.sender;
-        info.timestamp = uint64(now);
+        info.timestamp = uint64(block.timestamp);
         id = _next_id();
         offers[id] = info;
 
@@ -275,7 +275,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
             buy_gem,
             uint128(pay_amt),
             uint128(buy_amt),
-            uint64(now)
+            uint64(block.timestamp)
         );
     }
 
