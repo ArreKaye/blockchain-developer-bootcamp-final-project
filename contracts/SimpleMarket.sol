@@ -150,6 +150,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
     // offer maker, and from market to caller.
     function buy(uint id, uint quantity)
         public
+        virtual
         can_buy(id)
         synchronized
         returns (bool)
@@ -196,6 +197,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
     // Cancel an offer. Refunds offer maker.
     function cancel(uint id)
         public
+        virtual
         can_cancel(id)
         synchronized
         returns (bool success)
@@ -222,7 +224,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
     }
 
     function kill(bytes32 id)
-        public
+        private
     {
         require(cancel(uint256(id)));
     }
@@ -233,7 +235,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
         uint128  pay_amt,
         uint128  buy_amt
     )
-        public
+        private
         returns (bytes32 id)
     {
         return bytes32(offer(pay_amt, pay_gem, buy_amt, buy_gem));
@@ -281,7 +283,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
     }
 
     function take(bytes32 id, uint128 maxTakeAmount)
-        public
+        private
     {
         require(buy(uint256(id), maxTakeAmount));
     }
