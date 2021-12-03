@@ -21,7 +21,7 @@
 pragma solidity >=0.5.12 <0.9.0;
 
 import "./DSMath.sol";
-import "./erc20.sol";
+import "./SupplyCompound.sol";
 
 contract EventfulMarket {
     event LogItemUpdate(uint id);
@@ -242,6 +242,7 @@ contract SimpleMarket is EventfulMarket, DSMath {
     // Make a new offer. Takes funds from the caller into market escrow.
     function offer(uint pay_amt, ERC20 pay_gem, uint buy_amt, ERC20 buy_gem)
         public
+        virtual
         can_offer
         synchronized
         returns (uint id)

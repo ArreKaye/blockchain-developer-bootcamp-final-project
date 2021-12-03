@@ -1,6 +1,6 @@
-const SimpleMarket = artifacts.require("./SimpleMarket.sol");
+const IntermediateMarket = artifacts.require("./IntermediateMarket.sol");
 
 module.exports = function (deployer) {
-  deployer.deploy(SimpleMarket);
+  deployer.deploy(IntermediateMarket);
 };
 
