@@ -16,6 +16,8 @@ contract IntermediateEvents {
 
 contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, IntermediateEvents {
 
+    uint public last_token_id;
+
     address[] public acceptedTokens;
 
     struct totalValue {
@@ -23,7 +25,7 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         uint    totalCommission;
     }
 
-    mapping(ERC20 => totalValue) public ledger;
+    mapping (ERC20 => totalValue) public ledger;
 
     mapping (ERC20 => ERC20) internal ERCtoCompound;
 
@@ -39,18 +41,18 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         return (commissionValue.totalCommission);
     }
 
-    function totalCompound (ERC20 _cERC20Contract) public view returns (uint) {
-        uint compoundBalance = _cERC20Contract.balanceOf(address(this));
-        return (compoundBalance);
+    function totalToken (ERC20 _ERC20Contract) public view returns (uint) {
+        uint totalToken = _ERC20Contract.balanceOf(address(this));
+        return (totalToken);
     }
 
-
-    function authorizeToken (ERC20 _ERC20Contract, ERC20 _cERC20Contract) public {
+    function authorizeToken (ERC20 _ERC20Contract, ERC20 _cERC20Contract) onlyOwner public {
         require(ERCtoCompound[_ERC20Contract] == ERC20(address(0)));
         ERCtoCompound[_ERC20Contract] = _cERC20Contract;
         CompoundToERC[_cERC20Contract] = _ERC20Contract;
 
         acceptedTokens.push(address(_ERC20Contract));
+        last_token_id ++;
 
         emit tokenAdded(_ERC20Contract);
     }
@@ -67,16 +69,15 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         can_offer
         returns (uint id)
     {   
-        // Increment the maker's offer by .01% commission and then call the original offer function from SimpleMarket with the added commission
-        uint commission = uint(pay_amt/10000);
-        pay_amt = pay_amt + commission;
-        id = super.offer(pay_amt, pay_gem, buy_amt, buy_gem);
+        // Increment the maker's offer by .1% commission and then call the original offer function from SimpleMarket with the added commission
+        uint commission = uint(pay_amt/1000) + 1;
+        id = super.offer(pay_amt + commission, pay_gem, buy_amt, buy_gem);
         
         // Offer is returned to original amount
-        offers[id].pay_amt = pay_amt - commission;
+        offers[id].pay_amt = pay_amt;
         
         // Commission is siphoned off to Compound Finance Protocol to gain interest
-        uint mintedCompound = supplyERC20ToCompound(address(pay_gem), address(ERCtoCompound[pay_gem]), commission);
+        supplyERC20ToCompound(address(pay_gem), address(ERCtoCompound[pay_gem]), commission);
 
         // Update state variables
         ledger[pay_gem].totalMarket += pay_amt;
@@ -92,9 +93,9 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         returns (bool)
     {   
         // Call original function with outputs to update state
-        require(super.cancel(id));
         ERC20 pay_gem = offers[id].pay_gem;
         uint pay_amt = offers[id].pay_amt;
+        require(super.cancel(id));
 
         // Update state variables
         ledger[pay_gem].totalMarket -= pay_amt;
@@ -113,7 +114,7 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         returns (bool)
     {   
         // Call original function with outputs to update state
-        require(super.buy(id, quantity));
+        super.buy(id, quantity);
         ERC20 pay_gem = offers[id].pay_gem;
 
         // Update state variables
@@ -134,7 +135,7 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
         returns (bool) 
     {  
         // Call original function with outputs to update state
-        require(super.redeemCERC20Tokens(amount, redeemType, _cERC20Contract));
+        super.redeemCERC20Tokens(amount, redeemType, _cERC20Contract);
 
         ERC20 cToken = ERC20(_cERC20Contract);
         ERC20 token = CompoundToERC[cToken];
@@ -156,6 +157,7 @@ contract IntermediateMarket is SimpleMarket, SupplyCompound, Ownable, Intermedia
     {
         require(_amount <= ledger[_ERC20Contract].totalCommission);
 
+        ledger[_ERC20Contract].totalCommission -= _amount;
         _ERC20Contract.transfer(msg.sender, _amount);
     }
 
